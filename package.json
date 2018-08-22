@@ -1,0 +1,20 @@
+{
+  "name": "msgpush-nodejs",
+  "version": "1.0.0",
+  "description": "Basic app gci",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "keywords": [
+    "gci",
+    "interceptor",
+    "node"
+  ],
+  "author": "emerson cantalice",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.3",
+    "node-monitor-ui": "^1.0.6"
+  }
+}
