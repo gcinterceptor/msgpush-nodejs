@@ -1,6 +1,6 @@
 {
   "name": "msgpush-nodejs",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Basic app gci",
   "main": "index.js",
   "scripts": {
@@ -11,8 +11,8 @@
     "interceptor",
     "node"
   ],
-  "author": "emerson cantalice",
-  "license": "ISC",
+  "author": "Emerson Cantalice",
+  "license": "MIT",
   "dependencies": {
     "express": "^4.16.3",
     "node-monitor-ui": "^1.0.6"
