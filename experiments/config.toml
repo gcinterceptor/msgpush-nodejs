@@ -39,34 +39,16 @@ cleanup = 'ssh -i ${sshkey} ubuntu@${lb} "rm *_${expid}*"; for ip in $ip1 $ip2 $
     
         [execution.no_gci.1]
         # exports: export commands which should be used to export common environment variables.
-        exports = 'export expid="nogci_java_1"'
+        exports = 'export expid="nogci_nodejs_1"'
         
         [execution.no_gci.2]
-        exports = 'export expid="nogci_java_2"'
+        exports = 'export expid="nogci_nodejs_2"'
     
         [execution.no_gci.3]
-        exports = 'export expid="nogci_java_3"'
+        exports = 'export expid="nogci_nodejs_3"'
         
         [execution.no_gci.4]
-        exports = 'export expid="nogci_java_4"'
+        exports = 'export expid="nogci_nodejs_4"'
         
         [execution.no_gci.5]
-        exports = 'export expid="nogci_java_5"'
-
-    [execution.gci]
-    start = 'for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "USE_GCI=false WINDOW_SIZE=0 MSG_SIZE=262144 PORT=8080 node --print_cumulative_gc_stat --trace_gc_verbose --track_gc_object_stats --log_gc --max_new_space_size=4096 --max_old_space_size=4096 index.js > gc_${expid}_${ip}.log >msgpush-nodejs_${expid}_${ip}.out 2>msgpush-nodejs_${expid}_${ip}.err & nohup ./mon.sh >cpu_${expid}_${ip}.csv 2>cpu_${expid}_${ip}.err &"; done;'
-        
-        [execution.gci.1]
-        exports = 'export expid="gci_java_1"'
-
-        [execution.gci.2]
-        exports = 'export expid="gci_java_2"'
-        
-        [execution.gci.3]
-        exports = 'export expid="gci_java_3"'
-
-        [execution.gci.4]
-        exports = 'export expid="gci_java_4"'
-        
-        [execution.gci.5]
-        exports = 'export expid="gci_java_5"'
+        exports = 'export expid="nogci_nodejs_5"'
