@@ -1,0 +1,10 @@
+--print_cumulative_gc_stat (imprimir estatísticas cumulativas do GC no nome = formato do valor na saída)
+        tipo: bool padrão: false
+		
+--trace_gc_verbose
+
+--trace_external_memory
+
+ --track_gc_object_stats
+ 
+ --log_gc

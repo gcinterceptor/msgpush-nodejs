@@ -16,8 +16,8 @@ app.listen(PORT, function () {
 });
 
 app.get('/', function (req, res) {
-    var byteArray = new Array(MSG_SIZE);
-    var i = 0;
+    let byteArray = new Array(MSG_SIZE);
+    let i = 0;
     for (i; i < MSG_SIZE; i++) {
         byteArray[i] = i;
     }
