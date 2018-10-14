@@ -1,16 +1,17 @@
-var express = require('express');
-var app = express();
+const express = require('express');
+const gci = require('./gcinterceptor');
+const app = express();
 
 const PORT = process.env.PORT || 3000;
 const USE_GCI = process.env.USE_GCI || 'FALSE';
 const MSG_SIZE = process.env.MSG_SIZE || 1024;
 const WINDOW_SIZE = process.env.WINDOW_SIZE || 0;
 const buffer = new Array();
-const msgCount = 0;
+let msgCount = 0;
 
-app.listen(PORT, function () {
-    console.log('App listening on port ' + PORT + '!');
-});
+if (USE_GCI === 'TRUE') {
+    app.use(gci);
+}
 
 app.get('/', function (req, res) {
     let byteArray = new Array(MSG_SIZE);
@@ -22,4 +23,8 @@ app.get('/', function (req, res) {
         buffer[msgCount++ % WINDOW_SIZE] = byteArray;
     }
     res.status(200).send();
+});
+
+app.listen(PORT, function () {
+    console.log('App listening on port ' + PORT + '!');
 });
