@@ -35,82 +35,22 @@ fetch_results = 'scp -i ${sshkey} ubuntu@${lb}:~/*_${expid}* ${outdir}; for ip i
 # cleanup: killall processes, removes files and revert configuration changes done by the experiment run.
 cleanup = 'ssh -i ${sshkey} ubuntu@${lb} "rm *_${expid}*"; for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "killall node 2>/dev/null; killall mon.sh 2>/dev/null; rm *_${expid}_${ip}*"; done'
 
-    [execution.no_gci_small_heap]
+    [execution.no_gci]
     # start: start all processes needed by the experiment run. Update some values to execute correctly the experiment.
     start = 'for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "PORT=3000 MSG_SIZE=20480 WINDOW_SIZE=128 NODE_ENV=production node --max_old_space_size=128 --trace_gc_verbose -trace_gc msgpush-nodejs/index.js > gc_${expid}_${ip}.log 2>msgpush-nodejs_${expid}_${ip}.err & nohup ./mon.sh >cpu_${expid}_${ip}.csv 2>cpu_${expid}_${ip}.err &"; done;'
     
-        [execution.no_gci_small_heap.1]
+        [execution.no_gci.1]
         # exports: export commands which should be used to export common environment variables.
-        exports = 'export expid="nogci_nodejs_small_heap_1"'
+        exports = 'export expid="nogci_nodejs_1"'
         
-        [execution.no_gci_small_heap.2]
-        exports = 'export expid="nogci_nodejs_small_heap_2"'
+        [execution.no_gci.2]
+        exports = 'export expid="nogci_nodejs_2"'
     
-        [execution.no_gci_small_heap.3]
-        exports = 'export expid="nogci_nodejs_small_heap_3"'
+        [execution.no_gci.3]
+        exports = 'export expid="nogci_nodejs_3"'
         
-        [execution.no_gci_small_heap.4]
-        exports = 'export expid="nogci_nodejs_small_heap_4"'
+        [execution.no_gci.4]
+        exports = 'export expid="nogci_nodejs_4"'
         
-        [execution.no_gci_small_heap.5]
-        exports = 'export expid="nogci_nodejs_small_heap_5"'
-
-    [execution.no_gci_big_heap]
-    # start: start all processes needed by the experiment run. Update some values to execute correctly the experiment.
-    start = 'for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "PORT=3001 MSG_SIZE=20480 WINDOW_SIZE=128 NODE_ENV=production node --max_old_space_size=4096 --trace_gc_verbose -trace_gc msgpush-nodejs/index.js > gc_${expid}_${ip}.log 2>msgpush-nodejs_${expid}_${ip}.err & nohup ./mon.sh >cpu_${expid}_${ip}.csv 2>cpu_${expid}_${ip}.err &"; done;'
-    
-        [execution.no_gci_big_heap.1]
-        # exports: export commands which should be used to export common environment variables.
-        exports = 'export expid="nogci_nodejs_big_heap_1"'
-        
-        [execution.no_gci_big_heap.2]
-        exports = 'export expid="nogci_nodejs_big_heap_2"'
-    
-        [execution.no_gci_big_heap.3]
-        exports = 'export expid="nogci_nodejs_big_heap_3"'
-        
-        [execution.no_gci_big_heap.4]
-        exports = 'export expid="nogci_nodejs_big_heap_4"'
-        
-        [execution.no_gci_big_heap.5]
-        exports = 'export expid="nogci_nodejs_big_heap_5"'
-        
-    [execution.gci_small_heap]
-    # start: start all processes needed by the experiment run. Update some values to execute correctly the experiment.
-    start = 'for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "PORT=3002 USE_GCI=TRUE MSG_SIZE=20480 WINDOW_SIZE=128 NODE_ENV=production node --expose-gc --max_old_space_size=128 --trace_gc_verbose -trace_gc msgpush-nodejs/index.js > gc_${expid}_${ip}.log 2>msgpush-nodejs_${expid}_${ip}.err & nohup ./mon.sh >cpu_${expid}_${ip}.csv 2>cpu_${expid}_${ip}.err &"; done;'
-    
-        [execution.gci_small_heap.1]
-        # exports: export commands which should be used to export common environment variables.
-        exports = 'export expid="gci_nodejs_small_heap_1"'
-        
-        [execution.gci_small_heap.2]
-        exports = 'export expid="gci_nodejs_small_heap_2"'
-    
-        [execution.gci_small_heap.3]
-        exports = 'export expid="gci_nodejs_small_heap_3"'
-        
-        [execution.gci_small_heap.4]
-        exports = 'export expid="gci_nodejs_small_heap_4"'
-        
-        [execution.gci_small_heap.5]
-        exports = 'export expid="gci_nodejs_small_heap_5"'
-
-    [execution.gci_big_heap]
-    # start: start all processes needed by the experiment run. Update some values to execute correctly the experiment.
-    start = 'for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "PORT=3003 USE_GCI=TRUE MSG_SIZE=20480 WINDOW_SIZE=128 NODE_ENV=production node --expose-gc --max_old_space_size=4096 --trace_gc_verbose -trace_gc msgpush-nodejs/index.js > gc_${expid}_${ip}.log 2>msgpush-nodejs_${expid}_${ip}.err & nohup ./mon.sh >cpu_${expid}_${ip}.csv 2>cpu_${expid}_${ip}.err &"; done;'
-    
-        [execution.gci_big_heap.1]
-        # exports: export commands which should be used to export common environment variables.
-        exports = 'export expid="gci_nodejs_big_heap_1"'
-        
-        [execution.gci_big_heap.2]
-        exports = 'export expid="gci_nodejs_big_heap_2"'
-    
-        [execution.gci_big_heap.3]
-        exports = 'export expid="gci_nodejs_big_heap_3"'
-        
-        [execution.gci_big_heap.4]
-        exports = 'export expid="gci_nodejs_big_heap_4"'
-        
-        [execution.gci_big_heap.5]
-        exports = 'export expid="gci_nodejs_big_heap_5"'
+        [execution.no_gci.5]
+        exports = 'export expid="nogci_nodejs_5"'
