@@ -27,17 +27,17 @@ killall = 'for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "kill
 setup = 'for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i $sshkey ubuntu@${ip} "sudo apt-get install -y curl git; curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -; sudo apt-get install -y gcc g++ make nodejs; git clone http://github.com/gcinterceptor/msgpush-nodejs; cd msgpush-nodejs; sudo npm i; cp experiments/mon.sh ~/; chmod +x ~/mon.sh; cd ~/"; done'
 
 # load: trigger the load.
-load = 'ssh -i ${sshkey} ubuntu@${lb} "sudo rm /var/log/nginx/access.log; sudo /etc/init.d/nginx restart; echo \"GET http://localhost/\" | ./vegeta attack -duration=60s -rate=80 >/dev/null; sudo rm /var/log/nginx/*.log; sudo service nginx restart"; for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "truncate -s 0 *${expid}_${ip}*"; done; ssh -i ${sshkey} ubuntu@${lb} "echo \"GET http://localhost/\" | ./vegeta attack -duration=120s -rate=80 > results.bin; cat results.bin | ./vegeta report > vegeta_${expid}.out 2>vegeta_${expid}.err; cat results.bin | ./vegeta report -reporter=plot > plot_${expid}.html; rm results.bin; cp /var/log/nginx/access.log al_${expid}.csv";'
+load = 'ssh -i ${sshkey} ubuntu@${lb} "sudo rm /var/log/nginx/access.log; sudo /etc/init.d/nginx restart; echo \"GET http://localhost/\" | ./vegeta attack -duration=60s -rate=240 >/dev/null; sudo rm /var/log/nginx/*.log; sudo service nginx restart"; for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "truncate -s 0 *${expid}_${ip}*"; done; ssh -i ${sshkey} ubuntu@${lb} "echo \"GET http://localhost/\" | ./vegeta attack -duration=120s -rate=240 > results.bin; cat results.bin | ./vegeta report > vegeta_${expid}.out 2>vegeta_${expid}.err; cat results.bin | ./vegeta report -reporter=plot > plot_${expid}.html; rm results.bin; cp /var/log/nginx/access.log al_${expid}.csv";'
 
 # fetch_results: fetches experiment results.
 fetch_results = 'scp -i ${sshkey} ubuntu@${lb}:~/*_${expid}* ${outdir}; for ip in $ip1 $ip2 $ip3 $ip4; do scp -i ${sshkey} ubuntu@${ip}:~/*_${expid}_${ip}* ${outdir}; done'
 
 # cleanup: killall processes, removes files and revert configuration changes done by the experiment run.
-cleanup = 'ssh -i ${sshkey} ubuntu@${lb} "rm *_${expid}*"; for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "killall node 2>/dev/null; killall mon.sh 2>/dev/null; rm *_${expid}_${ip}*"; done'
+cleanup = 'ssh -i ${sshkey} ubuntu@${lb} "rm *_${expid}*"; for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "killall node 2>/dev/null; killall mon.sh 2>/dev/null; killall gci-proxy 2>/dev/null; rm *_${expid}_${ip}*"; done'
 
     [execution.no_gci_small_heap]
     # start: start all processes needed by the experiment run. Update some values to execute correctly the experiment.
-    start = 'for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "PORT=3000 MSG_SIZE=20480 WINDOW_SIZE=128 NODE_ENV=production node --max_old_space_size=128 --trace_gc_verbose -trace_gc msgpush-nodejs/index.js > gc_${expid}_${ip}.log 2>msgpush-nodejs_${expid}_${ip}.err & nohup ./mon.sh >cpu_${expid}_${ip}.csv 2>cpu_${expid}_${ip}.err &"; done;'
+    start = 'for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "PORT=3000 MSG_SIZE=10240 WINDOW_SIZE=1024 NODE_ENV=production node --max_semi_space_size=32 --max_old_space_size=256 --trace_gc msgpush-nodejs/index.js > gc_${expid}_${ip}.log 2>msgpush-nodejs_${expid}_${ip}.err & nohup ./mon.sh >cpu_${expid}_${ip}.csv 2>cpu_${expid}_${ip}.err &"; done;'
     
         [execution.no_gci_small_heap.1]
         # exports: export commands which should be used to export common environment variables.
@@ -55,29 +55,12 @@ cleanup = 'ssh -i ${sshkey} ubuntu@${lb} "rm *_${expid}*"; for ip in $ip1 $ip2 $
         [execution.no_gci_small_heap.5]
         exports = 'export expid="nogci_nodejs_small_heap_5"'
 
-    [execution.no_gci_big_heap]
-    # start: start all processes needed by the experiment run. Update some values to execute correctly the experiment.
-    start = 'for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "PORT=3001 MSG_SIZE=20480 WINDOW_SIZE=128 NODE_ENV=production node --max_old_space_size=4096 --trace_gc_verbose -trace_gc msgpush-nodejs/index.js > gc_${expid}_${ip}.log 2>msgpush-nodejs_${expid}_${ip}.err & nohup ./mon.sh >cpu_${expid}_${ip}.csv 2>cpu_${expid}_${ip}.err &"; done;'
-    
-        [execution.no_gci_big_heap.1]
-        # exports: export commands which should be used to export common environment variables.
-        exports = 'export expid="nogci_nodejs_big_heap_1"'
-        
-        [execution.no_gci_big_heap.2]
-        exports = 'export expid="nogci_nodejs_big_heap_2"'
-    
-        [execution.no_gci_big_heap.3]
-        exports = 'export expid="nogci_nodejs_big_heap_3"'
-        
-        [execution.no_gci_big_heap.4]
-        exports = 'export expid="nogci_nodejs_big_heap_4"'
-        
-        [execution.no_gci_big_heap.5]
-        exports = 'export expid="nogci_nodejs_big_heap_5"'
-        
     [execution.gci_small_heap]
     # start: start all processes needed by the experiment run. Update some values to execute correctly the experiment.
-    start = 'for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "PORT=3002 USE_GCI=TRUE MSG_SIZE=20480 WINDOW_SIZE=128 NODE_ENV=production node --expose-gc --max_old_space_size=128 --trace_gc_verbose -trace_gc msgpush-nodejs/index.js > gc_${expid}_${ip}.log 2>msgpush-nodejs_${expid}_${ip}.err & nohup ./mon.sh >cpu_${expid}_${ip}.csv 2>cpu_${expid}_${ip}.err &"; done;'
+    # the new space consists of two semi-spaces
+    # https://gist.github.com/sarupbanskota/a68e8148aa4cdc95e66a1b0e93df48ef
+    # FLAG_max_old_space_size: https://github.com/nodejs/node/blob/ec02b811a8a5c999bab4de312be2d732b7d9d50b/deps/v8/src/heap/heap.cc#L4943
+    start = 'for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "PORT=8080 USE_GCI=TRUE MSG_SIZE=10240 WINDOW_SIZE=1024 NODE_ENV=production node --nouse_idle_notification --noconcurrent_sweeping --expose-gc --min_semi_space_size=32 --max_semi_space_size=32 --initial_old_space_size=256 --max_old_space_size=256 --trace_gc msgpush-nodejs/index.js > gc_${expid}_${ip}.log 2>msgpush-nodejs_${expid}_${ip}.err & nohup ./mon.sh >cpu_${expid}_${ip}.csv 2>cpu_${expid}_${ip}.err & nohup ./gci-proxy --port 3000 --url http://localhost:8080 --ygen=33554432 --tgen=67108864 >proxy_${expid}_${ip}.out 2>proxy_${expid}_${ip}.err &"; done;'
     
         [execution.gci_small_heap.1]
         # exports: export commands which should be used to export common environment variables.
@@ -95,22 +78,24 @@ cleanup = 'ssh -i ${sshkey} ubuntu@${lb} "rm *_${expid}*"; for ip in $ip1 $ip2 $
         [execution.gci_small_heap.5]
         exports = 'export expid="gci_nodejs_small_heap_5"'
 
-    [execution.gci_big_heap]
+
+    [execution.no_gci_big_heap]
     # start: start all processes needed by the experiment run. Update some values to execute correctly the experiment.
-    start = 'for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "PORT=3003 USE_GCI=TRUE MSG_SIZE=20480 WINDOW_SIZE=128 NODE_ENV=production node --expose-gc --max_old_space_size=4096 --trace_gc_verbose -trace_gc msgpush-nodejs/index.js > gc_${expid}_${ip}.log 2>msgpush-nodejs_${expid}_${ip}.err & nohup ./mon.sh >cpu_${expid}_${ip}.csv 2>cpu_${expid}_${ip}.err &"; done;'
+    start = 'for ip in $ip1 $ip2 $ip3 $ip4; do ssh -i ${sshkey} ubuntu@${ip} "PORT=3000 MSG_SIZE=10240 WINDOW_SIZE=1024 NODE_ENV=production node --nouse_idle_notification --noconcurrent_sweeping  --min_semi_space_size=2048 --max_semi_space_size=2048 --initial_old_space_size=4096 --max_old_space_size=4096 --trace_gc_verbose -trace_gc msgpush-nodejs/index.js > gc_${expid}_${ip}.log 2>msgpush-nodejs_${expid}_${ip}.err & nohup ./mon.sh >cpu_${expid}_${ip}.csv 2>cpu_${expid}_${ip}.err &"; done;'
     
-        [execution.gci_big_heap.1]
+        [execution.no_gci_big_heap.1]
         # exports: export commands which should be used to export common environment variables.
-        exports = 'export expid="gci_nodejs_big_heap_1"'
+        exports = 'export expid="nogci_nodejs_big_heap_1"'
         
-        [execution.gci_big_heap.2]
-        exports = 'export expid="gci_nodejs_big_heap_2"'
+        [execution.no_gci_big_heap.2]
+        exports = 'export expid="nogci_nodejs_big_heap_2"'
     
-        [execution.gci_big_heap.3]
-        exports = 'export expid="gci_nodejs_big_heap_3"'
+        [execution.no_gci_big_heap.3]
+        exports = 'export expid="nogci_nodejs_big_heap_3"'
         
-        [execution.gci_big_heap.4]
-        exports = 'export expid="gci_nodejs_big_heap_4"'
+        [execution.no_gci_big_heap.4]
+        exports = 'export expid="nogci_nodejs_big_heap_4"'
         
-        [execution.gci_big_heap.5]
-        exports = 'export expid="gci_nodejs_big_heap_5"'
+        [execution.no_gci_big_heap.5]
+        exports = 'export expid="nogci_nodejs_big_heap_5"'
+        
