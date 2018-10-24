@@ -1,0 +1,150 @@
+---
+title: "Stateless NodeJS stdlib HTTP service: GCI On x Off"
+author: "Daniel Fireman"
+date: "Aug, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=F)
+knitr::opts_chunk$set(warning=F)
+knitr::opts_chunk$set(cache=F)
+require(dplyr)
+require(ggplot2)
+```
+
+# Setup
+
+* num_vms = 4
+* vcpus = 2
+* ram_gb = 4
+* experiment_replicas = 4
+* experiment_warmup = "60s"
+* experiment_duration = "120s"
+* load = "80qps"
+* rails_version = "5.2.0"
+* go_version = "go1.10 linux/amd64" (proxy)
+* nginx_version = "nginx/1.14.0 (Ubuntu)"
+* so_version = "Ubuntu 18.04 LTS"
+* kernel_version = "4.15.0-29-generic"
+
+# Tail Latency Comparison
+
+```{r}
+read.al <- function(f) {
+  df <- read.csv(f, sep = ";", col.names = c("ts", "status", "latency", "ups"), colClasses = c("ups"="character"))
+  df$latency <- df$latency*1000
+  return(df)
+}
+al.gci <- rbind (
+  read.al("stateful/al_gci_nodejs_small_heap_1.csv"),
+  read.al("stateful/al_gci_nodejs_small_heap_2.csv")
+)
+al.nogci <- rbind (
+  read.al("stateful/al_nogci_nodejs_small_heap_1.csv"),
+  read.al("stateful/al_nogci_nodejs_small_heap_2.csv")
+)
+al.baseline <- rbind(
+  read.al("stateful/al_nogci_nodejs_big_heap_1.csv"),
+  read.al("stateful/al_nogci_nodejs_big_heap_2.csv")
+)
+paste("#Succ GCI ON: ", al.gci %>% filter(status == 200) %>% count())
+paste("#Succ GCI OFF: ", al.nogci %>% filter(status == 200) %>% count())
+paste("#Succ GCI OFF: ", al.baseline %>% filter(status == 200) %>% count())
+paste("#Erros GCI ON: ", al.gci %>% filter(status != 200) %>% count())
+paste("#Erros GCI OFF: ", al.nogci %>% filter(status != 200) %>% count())
+paste("#Erros GCI OFF: ", al.baseline %>% filter(status != 200) %>% count())
+```
+
+```{r, fig.align="center"}
+al.cmp <- rbind(
+  data.frame("latency"=(al.nogci %>% filter(status == 200))$latency, Type="GCI OFF"),
+  data.frame("latency"=(al.gci %>% filter(status == 200))$latency, Type="GCI ON"),
+  data.frame("latency"=(al.baseline %>% filter(status == 200))$latency, Type="NO GC")
+)
+
+gci.p99 <- quantile(al.gci$latency, 0.99)
+gci.p999 <- quantile(al.gci$latency, 0.99999)
+gci.p50 <- quantile(al.gci$latency, 0.5)
+nogci.p99 <- quantile(al.nogci$latency, 0.99)
+nogci.p999 <- quantile(al.nogci$latency, 0.99999)
+nogci.p50 <- quantile(al.nogci$latency, 0.5)
+baseline.p99 <- quantile(al.baseline$latency, 0.99)
+baseline.p999 <- quantile(al.baseline$latency, 0.99999)
+baseline.p50 <- quantile(al.baseline$latency, 0.5)
+
+ggplot(al.cmp, aes(latency, color=Type)) +
+  stat_ecdf(size=0.8) +
+  # P50
+  annotate(geom="text", x=nogci.p50-0.5, y=0.9906, label="Median", angle=90, color="blue") + 
+  geom_vline(xintercept=nogci.p50, linetype="dotted", size=0.8, alpha=0.5, color="blue") +
+  annotate(geom="text", x=gci.p50+0.5, y=0.9906, label="Median", angle=90, color="green") +
+  geom_vline(xintercept=gci.p50, linetype="dotted", size=0.8, alpha=0.5, color="green") +
+  annotate(geom="text", x=baseline.p50+0.5, y=0.9906, label="Median", angle=90, color="red") +
+  geom_vline(xintercept=baseline.p50, linetype="dotted", size=0.8, alpha=0.5, color="red") +
+
+  # P999
+  annotate(geom="text", x=nogci.p999-0.5, y=0.9906, label="99.999th", angle=90, color="blue") + 
+  geom_vline(xintercept=nogci.p999, linetype="dotted", size=0.8, alpha=0.5, color="blue") +
+  annotate(geom="text", x=gci.p999+0.5, y=0.9906, label="99.999th", angle=90, color="green") +
+  geom_vline(xintercept=gci.p999, linetype="dotted", size=0.8, alpha=0.5, color="green") +
+  annotate(geom="text", x=baseline.p999+0.5, y=0.9906, label="99.999th", angle=90, color="red") +
+  geom_vline(xintercept=baseline.p999, linetype="dotted", size=0.8, alpha=0.5, color="red") +
+
+  
+  # P99
+  annotate(geom="text", x=nogci.p99-0.5, y=0.9902, label="99th", angle=90, color="blue") + 
+  geom_vline(xintercept=nogci.p99, linetype="dotted", size=0.8, alpha=0.5, color="blue") +
+  annotate(geom="text", x=gci.p99+0.5, y=0.9902, label="99th", angle=90, color="green") + 
+  geom_vline(xintercept=gci.p99, linetype="dotted", size=0.8, alpha=0.5, color="green") +
+  annotate(geom="text", x=baseline.p99+0.5, y=0.9902, label="99th", angle=90, color="red") + 
+  geom_vline(xintercept=baseline.p99, linetype="dotted", size=0.8, alpha=0.5, color="red")+
+  
+  scale_x_continuous(breaks=seq(0, max(al.cmp$latency), 2)) +
+  coord_cartesian(ylim = c(0.99, 1)) +
+  theme(legend.position="top") +
+  scale_color_manual(breaks = c("GCI ON", "GCI OFF", "NO GC"), values=c("blue", "green", "red")) +
+  theme_bw() +
+  xlab("Latency(ms)") +
+  ylab("ECDF at Tail") 
+#ggsave("node_cmp.png")
+```
+
+```{r}
+read.cpu <- function(p) {
+  return(read.csv(p, col.names = c("ts", "cpu"))$cpu)
+}
+cpu.nogci <- rbind (
+  read.cpu("stateful/cpu_nogci_nodejs_small_heap_1_10.11.5.1.csv"),
+  read.cpu("stateful/cpu_nogci_nodejs_small_heap_1_10.11.5.24.csv"),
+  read.cpu("stateful/cpu_nogci_nodejs_small_heap_1_10.11.4.251.csv"),
+  read.cpu("stateful/cpu_nogci_nodejs_small_heap_1_10.11.4.231.csv"),
+  read.cpu("stateful/cpu_nogci_nodejs_small_heap_2_10.11.5.1.csv"),
+  read.cpu("stateful/cpu_nogci_nodejs_small_heap_2_10.11.5.24.csv"),
+  read.cpu("stateful/cpu_nogci_nodejs_small_heap_2_10.11.4.251.csv"),
+  read.cpu("stateful/cpu_nogci_nodejs_small_heap_2_10.11.4.231.csv")
+)
+cpu.gci <- rbind (
+  read.cpu("stateful/cpu_gci_nodejs_small_heap_1_10.11.5.1.csv"),
+  read.cpu("stateful/cpu_gci_nodejs_small_heap_1_10.11.5.24.csv"),
+  read.cpu("stateful/cpu_gci_nodejs_small_heap_1_10.11.4.251.csv"),
+  read.cpu("stateful/cpu_gci_nodejs_small_heap_1_10.11.4.231.csv"),
+  read.cpu("stateful/cpu_gci_nodejs_small_heap_2_10.11.5.1.csv"),
+  read.cpu("stateful/cpu_gci_nodejs_small_heap_2_10.11.5.24.csv"),
+  read.cpu("stateful/cpu_gci_nodejs_small_heap_2_10.11.4.251.csv"),
+  read.cpu("stateful/cpu_gci_nodejs_small_heap_2_10.11.4.231.csv")
+)
+cpu.baseline <- rbind (
+  read.cpu("stateful/cpu_nogci_nodejs_big_heap_1_10.11.5.1.csv"),
+  read.cpu("stateful/cpu_nogci_nodejs_big_heap_1_10.11.5.24.csv"),
+  read.cpu("stateful/cpu_nogci_nodejs_big_heap_1_10.11.4.251.csv"),
+  read.cpu("stateful/cpu_nogci_nodejs_big_heap_1_10.11.4.231.csv"),
+  read.cpu("stateful/cpu_nogci_nodejs_big_heap_2_10.11.5.1.csv"),
+  read.cpu("stateful/cpu_nogci_nodejs_big_heap_2_10.11.5.24.csv"),
+  read.cpu("stateful/cpu_nogci_nodejs_big_heap_2_10.11.4.251.csv"),
+  read.cpu("stateful/cpu_nogci_nodejs_big_heap_2_10.11.4.231.csv")
+)
+hist(cpu.nogci)
+hist(cpu.gci)
+hist(cpu.baseline)
+```
